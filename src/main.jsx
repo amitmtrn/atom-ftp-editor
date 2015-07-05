@@ -12,10 +12,12 @@ module.exports = AtomReactStarter = {
   ftpClient: undefined,
   settings: {},
 
+  //TODO: upload new files in the project
   /**
    *
    */
   activate: function() {
+    alert('atom ftp editor activated make sure the settings (' + PROJECT_PATH + ') are correct');
 
     // register commands
     atom.commands.add('atom-workspace', {
@@ -45,6 +47,7 @@ module.exports = AtomReactStarter = {
    *
    */
   __uploadCurrent: function() {
+    //TODO: custom upload and download files
     var cleanPath = AtomReactStarter.__getCurrentFile()
                     .split(PROJECT_PATH).join('').replace(/\\/g, '/');
     AtomReactStarter.__upload(AtomReactStarter.__getCurrentFile(), AtomReactStarter.settings.path + cleanPath);

@@ -7,7 +7,7 @@
           "label": "FTP editor",
           "submenu": [
             {
-              "label": "Create Settings",
+              "label": "Create and Initialize Settings",
               "command": "ftp-editor:create"
             },
             {
