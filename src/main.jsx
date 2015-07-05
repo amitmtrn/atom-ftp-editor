@@ -20,6 +20,9 @@ module.exports = AtomReactStarter = {
   },
 
   createSettings: function() {
+    if (!window.confirm("Do you want to download all files?")) {
+      return;
+    }
     var projectPath = atom.project.getPaths();
     var settingsPath = projectPath[0] + '/.ftp-settings.json';
 
@@ -81,13 +84,24 @@ module.exports = AtomReactStarter = {
             fs.existsPromise(projectPath + path + '/' + files[i].name)
             .then(function(args){
               if(args[0]) {
-
               } else {
-
+                AtomReactStarter.downloadFromFtp(AtomReactStarter.settings.path + path + '/' + files[i].name, projectPath + path + '/' + files[i].name);
               }
             });
           }
         }(i, path, files));
+      }
+    });
+
+  },
+
+  downloadFromFtp: function(fromFile, toFile) {
+    AtomReactStarter.ftpClient.get(fromFile, function(err, stream) {
+      if (err) {
+        AtomReactStarter.downloadFromFtp(fromFile, toFile);
+      } else {
+        stream.once('close', function() { AtomReactStarter.ftpClient.end(); });
+        stream.pipe(fs.createWriteStream(toFile));
       }
     });
 
