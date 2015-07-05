@@ -9,7 +9,12 @@
             {
               "label": "Create Settings",
               "command": "ftp-editor:create"
+            },
+            {
+              "label": "Download Project",
+              "command": "ftp-editor:download"
             }
+
           ]
         }
       ]
