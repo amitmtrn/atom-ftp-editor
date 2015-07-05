@@ -13,6 +13,7 @@
     "atom": ">=1.0.0 <2.0.0"
   },
   "dependencies": {
+    "ftp": "^0.3.10",
     "node-promises": "git://github.com/amitmtrn/node-promises",
     "react": "^0.13.3"
   }
