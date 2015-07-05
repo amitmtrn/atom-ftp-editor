@@ -7,7 +7,7 @@
   "activationCommands": {
     "atom-workspace": "ftp-editor:create"
   },
-  "repository": "https://github.com/atom/atom-ftp-editor",
+  "repository": "https://github.com/amitmtrn/atom-ftp-editor",
   "license": "MIT",
   "engines": {
     "atom": ">=1.0.0 <2.0.0"
