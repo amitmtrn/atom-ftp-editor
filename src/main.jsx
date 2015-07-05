@@ -12,13 +12,19 @@ module.exports = AtomReactStarter = {
       'ftp-editor:create': AtomReactStarter.createSettings
     });
     document.addEventListener("core:save", function(e) {
-      fs.existsPromise(atom.workspace.getActivePane().activeItem.buffer.file.path)
-        .then(function (exists) { // upload the new file to the ftp host
-          console.log(exists);
-        });
+      if(!AtomReactStarter.ftpClient) {
+        AtomReactStarter.ftpClient = new Ftp();
+        AtomReactStarter.ftpClient.on('ready', AtomReactStarter.uploadThisFile);
+        AtomReactStarter.settings = require(atom.project.getPaths()[0] + '/.ftp-settings.json');
+        AtomReactStarter.ftpClient.connect(AtomReactStarter.settings);
+      }
     });
   },
-
+  uploadThisFile: function() {
+    var projectPath = atom.project.getPaths()[0];
+    var path = atom.workspace.getActivePane().activeItem.buffer.file.path.split(atom.project.getPaths()[0]).join('');
+    AtomReactStarter.uploadToFtp(atom.workspace.getActivePane().activeItem.buffer.file.path, AtomReactStarter.settings.path + path.replace(/\\/g, '/'));
+  },
   createSettings: function() {
     if (!window.confirm("Do you want to download all files?")) {
       return;
@@ -105,6 +111,13 @@ module.exports = AtomReactStarter = {
       }
     });
 
+  },
+
+  uploadToFtp: function(fromFile, toFile){
+    AtomReactStarter.ftpClient.put(fromFile, toFile, function(err) {
+      if (err) throw err;
+      AtomReactStarter.ftpClient.end();
+    });
   },
 
   deactivate: function() {
