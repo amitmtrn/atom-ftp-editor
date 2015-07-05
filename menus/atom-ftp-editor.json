@@ -1,0 +1,18 @@
+{
+  "menu": [
+    {
+      "label": "Packages",
+      "submenu": [
+        {
+          "label": "FTP editor",
+          "submenu": [
+            {
+              "label": "Create Settings",
+              "command": "ftp-editor:create"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
