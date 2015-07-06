@@ -13,6 +13,20 @@ module.exports = AtomFtpEditor = {
   settings: undefined,
   panelItem: {},
 
+  config: {
+    autoDownloadOnOpen: {
+      type: 'boolean',
+      default: true
+    },
+    autoUploadOnSave: {
+      type: 'boolean',
+      default: true
+    },
+    presistDownload: {
+      type: 'boolean',
+      default: true
+    }
+  },
   //TODO: upload new folder in the project
   /**
    *
@@ -31,8 +45,12 @@ module.exports = AtomFtpEditor = {
     });
 
     // register listeners
-    document.addEventListener('core:save', AtomFtpEditor.__onsave);
-    atom.workspace.paneContainer.observePaneItems(AtomFtpEditor.__onopen);
+    if (atom.config.get('atom-ftp-editor.autoUploadOnSave')) {
+      document.addEventListener('core:save', AtomFtpEditor.__onsave);
+    }
+    if (atom.config.get('atom-ftp-editor.autoDownloadOnOpen')) {
+      atom.workspace.paneContainer.observePaneItems(AtomFtpEditor.__onopen);
+    }
   },
 
   currentDownload: function() {
@@ -55,7 +73,7 @@ module.exports = AtomFtpEditor = {
   },
 
   __onopen: function(e) {
-    if (!e) {
+    if (!e || !e.getPath) {
       return;
     }
     var cleanPath = e.getPath()
@@ -229,9 +247,10 @@ module.exports = AtomFtpEditor = {
     AtomFtpEditor.showLog('downloading file ' + fromFile);
     AtomFtpEditor.ftpClient.get(fromFile, function(err, stream) {
       if (err) {
-        //TODO: add presist mode control (from control panel)
         AtomFtpEditor.showLog('Error downloading ' + fromFile + 'will try again later');
-        AtomFtpEditor.__download(fromFile, toFile); // keep trying until everything done
+        if (atom.config.get('atom-ftp-editor.presistDownload')) {
+          AtomFtpEditor.__download(fromFile, toFile); // keep trying until everything done
+        }
       } else {
         AtomFtpEditor.showLog('downloaded ' + fromFile);
         stream.pipe(fs.createWriteStream(toFile));
