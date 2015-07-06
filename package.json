@@ -1,7 +1,7 @@
 {
   "name": "atom-ftp-editor",
   "main": "./lib/main",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "With this package every file that you edit is automatically upload to the server via ftp and you can download the entire project to your local computer",
   "keywords": [],
   "activationCommands": {
