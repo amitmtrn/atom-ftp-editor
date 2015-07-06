@@ -5,7 +5,13 @@
   "description": "With this package every file that you edit is automatically upload to the server via ftp and you can download the entire project to your local computer",
   "keywords": [],
   "activationCommands": {
-    "atom-workspace": "ftp-editor:create"
+    "atom-workspace": [
+      "ftp-editor:create",
+      "ftp-editor:download",
+      "ftp-editor:single-download",
+      "ftp-editor:current-download",
+      "ftp-editor:current-upload"
+      ]
   },
   "repository": "https://github.com/amitmtrn/atom-ftp-editor",
   "license": "MIT",
