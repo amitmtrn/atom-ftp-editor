@@ -8,9 +8,10 @@ var fs = nodePromises('fs');
 var PROJECT_PATH = atom.project.getPaths()[0];
 var SETTINGS_PATH = PROJECT_PATH + '/.ftp-settings.json';
 
-module.exports = AtomReactStarter = {
+module.exports = AtomFtpEditor = {
   ftpClient: undefined,
   settings: {},
+  panelItem: {},
 
   //TODO: upload new files in the project
   /**
@@ -18,28 +19,30 @@ module.exports = AtomReactStarter = {
    */
   activate: function() {
     alert('atom ftp editor activated make sure the settings (' + PROJECT_PATH + ') are correct');
+    AtomFtpEditor.panelItem.item = document.createElement("div");
+    atom.workspace.addBottomPanel(AtomFtpEditor.panelItem);
 
     // register commands
     atom.commands.add('atom-workspace', {
-      'ftp-editor:create': AtomReactStarter.createSettings,
-      'ftp-editor:download': AtomReactStarter.downloadProject
+      'ftp-editor:create': AtomFtpEditor.createSettings,
+      'ftp-editor:download': AtomFtpEditor.downloadProject
     });
 
     // register listeners
-    document.addEventListener('core:save', AtomReactStarter.__onsave);
+    document.addEventListener('core:save', AtomFtpEditor.__onsave);
   },
 
   /**
    *
    */
   __onsave: function() {
-    if (!AtomReactStarter.ftpClient) {
-      AtomReactStarter.ftpClient = new Ftp();
-      AtomReactStarter.ftpClient.on('ready', AtomReactStarter.__uploadCurrent);
-      AtomReactStarter.settings = require(SETTINGS_PATH);
-      AtomReactStarter.ftpClient.connect(AtomReactStarter.settings);
+    if (!AtomFtpEditor.ftpClient) {
+      AtomFtpEditor.ftpClient = new Ftp();
+      AtomFtpEditor.ftpClient.on('ready', AtomFtpEditor.__uploadCurrent);
+      AtomFtpEditor.settings = require(SETTINGS_PATH);
+      AtomFtpEditor.ftpClient.connect(AtomFtpEditor.settings);
     } else {
-      AtomReactStarter.__uploadCurrent();
+      AtomFtpEditor.__uploadCurrent();
     }
   },
 
@@ -48,9 +51,9 @@ module.exports = AtomReactStarter = {
    */
   __uploadCurrent: function() {
     //TODO: custom upload and download files
-    var cleanPath = AtomReactStarter.__getCurrentFile()
+    var cleanPath = AtomFtpEditor.__getCurrentFile()
                     .split(PROJECT_PATH).join('').replace(/\\/g, '/');
-    AtomReactStarter.__upload(AtomReactStarter.__getCurrentFile(), AtomReactStarter.settings.path + cleanPath);
+    AtomFtpEditor.__upload(AtomFtpEditor.__getCurrentFile(), AtomFtpEditor.settings.path + cleanPath);
   },
 
   /**
@@ -64,7 +67,7 @@ module.exports = AtomReactStarter = {
    *
    */
   createSettings: function() {
-    AtomReactStarter.ftpClient = undefined;
+    AtomFtpEditor.ftpClient = undefined;
     fs.existsPromise(SETTINGS_PATH)
     .then(function(args) {
       var defaultSettings = {
@@ -78,7 +81,7 @@ module.exports = AtomReactStarter = {
         pasvTimeout: 10000,
         keepalive: 10000,
         path: '/www'
-      }
+      };
       var exists = args[0];
 
       if (!exists) {
@@ -97,10 +100,13 @@ module.exports = AtomReactStarter = {
       return;
     }
 
-    AtomReactStarter.settings ? AtomReactStarter.settings = require(SETTINGS_PATH) : '';
-    AtomReactStarter.ftpClient = new Ftp();
-    AtomReactStarter.ftpClient.on('ready', AtomReactStarter.__setDefaults);
-    AtomReactStarter.ftpClient.connect(AtomReactStarter.settings);
+    if (AtomFtpEditor.settings) {
+      AtomFtpEditor.settings = require(SETTINGS_PATH);
+    }
+
+    AtomFtpEditor.ftpClient = new Ftp();
+    AtomFtpEditor.ftpClient.on('ready', AtomFtpEditor.__setDefaults);
+    AtomFtpEditor.ftpClient.connect(AtomFtpEditor.settings);
 
     //TODO: need to add loader that show if the project still download
   },
@@ -109,28 +115,28 @@ module.exports = AtomReactStarter = {
    *
    */
   __setDefaults: function() {
-    AtomReactStarter.ftpClient.cwd(AtomReactStarter.settings.path, AtomReactStarter.__downloadProject);
+    AtomFtpEditor.ftpClient.cwd(AtomFtpEditor.settings.path, AtomFtpEditor.__downloadProject);
   },
 
   /**
    *
    */
-  __downloadProject: function(path) {
-    var path = path || '';
+  __downloadProject: function(pathInput) {
+    var path = pathInput || '';
     /**
      *
      */
-    var __handleDownload = function(err, files) {
+    var __handleDownload = function(err, filesInput) {
       var i;
-      var files = files || [];
+      var files = filesInput || [];
 
       for (i = 2; i < files.length; i++) {
-        AtomReactStarter.__handleFile(path, files[i]);
+        AtomFtpEditor.__handleFile(path, files[i]);
       }
     };
 
     ////////////////////////////////
-    AtomReactStarter.ftpClient.list(AtomReactStarter.settings.path + path, __handleDownload);
+    AtomFtpEditor.ftpClient.list(AtomFtpEditor.settings.path + path, __handleDownload);
 
   },
 
@@ -146,7 +152,7 @@ module.exports = AtomReactStarter = {
     var __isFolderExist = function(args) {
       var exists = args[0];
       if (exists) {
-        AtomReactStarter.__downloadProject(remotePath);
+        AtomFtpEditor.__downloadProject(remotePath);
         return [true];
       } else {
         return fs.mkdirPromise(localPath);
@@ -158,7 +164,7 @@ module.exports = AtomReactStarter = {
     var __continueRecursion = function(args) {
       var folderNotExist = args[0];
       if (!folderNotExist) {
-        AtomReactStarter.__downloadProject(remotePath);
+        AtomFtpEditor.__downloadProject(remotePath);
       }
     };
     /**
@@ -170,7 +176,7 @@ module.exports = AtomReactStarter = {
         // TODO: if file exists need to check date modified and download if new on exists
         console.log('');
       } else {
-        AtomReactStarter.__download(AtomReactStarter.settings.path + remotePath, localPath);
+        AtomFtpEditor.__download(AtomFtpEditor.settings.path + remotePath, localPath);
       }
     };
 
@@ -185,18 +191,12 @@ module.exports = AtomReactStarter = {
   },
 
   __download: function(fromFile, toFile) {
-    AtomReactStarter.ftpClient.get(fromFile, function(err, stream) {
+    AtomFtpEditor.ftpClient.get(fromFile, function(err, stream) {
       if (err) {
         //TODO: add presist mode
-        AtomReactStarter.__download(fromFile, toFile); // keep trying until everything done
+        AtomFtpEditor.__download(fromFile, toFile); // keep trying until everything done
       } else {
-        //TODO: add indication for downloading
-        console.log('download file' + toFile);
-
-        stream.once('close', function() {
-          AtomReactStarter.ftpClient.end();
-        });
-
+        AtomFtpEditor.showLog('download file ' + fromFile);
         stream.pipe(fs.createWriteStream(toFile));
       }
     });
@@ -204,13 +204,20 @@ module.exports = AtomReactStarter = {
   },
 
   __upload: function(fromFile, toFile) {
-    AtomReactStarter.ftpClient.put(fromFile, toFile, function(err) {
-      if (err) {throw err};
+    AtomFtpEditor.ftpClient.put(fromFile, toFile, function(err) {
+      if (err) {throw err;}
 
-      //TODO: add indication for uploading
-      console.log('upload file' + toFile);
-      AtomReactStarter.ftpClient.end();
-      AtomReactStarter.ftpClient = undefined;
+      AtomFtpEditor.showLog('upload file ' + fromFile);
+      AtomFtpEditor.ftpClient.end();
+      AtomFtpEditor.ftpClient = undefined;
     });
+  },
+
+  showLog: function(text) {
+    React.render(
+      <div>{{text}}</div>,
+        AtomFtpEditor.panelItem.item
+      );
   }
+
 };
