@@ -1,19 +1,17 @@
-'use strict';
-
 //dependencies
-var nodePromises = require('node-promises');
-var Ftp = require('ftp');
-var fs = nodePromises('fs');
-var atomVisual = require('./modules/atom-visual');
+const nodePromises = require('node-promises');
+const Ftp = require('ftp');
+const fs = nodePromises('fs');
+const atomVisual = require('./modules/atom-visual');
 
 // constant
-var PROJECT_PATHS = atom.project.getPaths();
-var SETTINGS_FILE_NAME = '/.ftp-settings.json';
-var SETTINGS_PATH = PROJECT_PATHS[0] + SETTINGS_FILE_NAME;
-var FTP = new WeakMap();
-var CONNECTION = Symbol('connection');
+const PROJECT_PATHS = atom.project.getPaths();
+const SETTINGS_FILE_NAME = '/.ftp-settings.json';
+const SETTINGS_PATH = PROJECT_PATHS[0] + SETTINGS_FILE_NAME;
+const FTP = new WeakMap();
+const CONNECTION = Symbol('connection');
 
-var config = {
+const config = {
   autoDownloadOnOpen: {
     type: 'boolean',
     default: true
@@ -26,14 +24,14 @@ var config = {
     type: 'boolean',
     default: true
   }
-};
+}
 
 //////////////////////////////////////////////
 
 module.exports = {
   config: config,
   activate: activate
-};
+}
 
 //////////////////////////////////////////////
 
@@ -41,9 +39,9 @@ function activate() {
   // register commands
   atom.commands.add('atom-workspace', {
     'ftp-editor:create': createSettings,
-    'ftp-editor:download': function ftpEditorDownload() {
-      return connect(downloadProject);
-    }
+    'ftp-editor:download': ()=>connect(downloadProject),
+    // 'ftp-editor:current-download': currentDownload,
+    // 'ftp-editor:current-upload': currentUpload
   });
 
   // register listeners
@@ -59,28 +57,22 @@ function activate() {
 // download functions //
 ///////////////////////
 
-// 'ftp-editor:current-download': currentDownload,
-// 'ftp-editor:current-upload': currentUpload
 function downloadProject() {
-  var fileList = getFileList();
-  fileList.forEach(function (v) {
-    download(v);
-  });
+  let fileList = getFileList();
+  fileList.forEach((v)=>{download(v);});
   FTP.get(CONNECTION).end();
 }
 
 function getFileList() {
-  var settings = require(SETTINGS_PATH);
-  var filesList = [];
-  var folders = [settings.path];
+  let settings = require(SETTINGS_PATH);
+  let filesList = [];
+  let folders = [settings.path];
 
   while (folders.length > 0) {
-    var path = folders.pop();
-    FTP.get(CONNECTION).list(path, function (err, list) {
+    let path = folders.pop();
+    FTP.get(CONNECTION).list(path, (err, list)=> {
       if (err) throw err;
-      list.forEach(function (v) {
-        console.log(v);
-      });
+      list.forEach((v)=>{console.log(v);});
     });
   }
 
@@ -89,23 +81,24 @@ function getFileList() {
 
 function download(fromFile) {
   atomVisual.showLog('downloading file ' + fromFile);
-  AtomFtpEditor.ftpClient.get(fromFile, function (err, stream) {
+  AtomFtpEditor.ftpClient.get(fromFile, function(err, stream) {
     if (err) {
       atomVisual.showLog('Error downloading ' + fromFile + 'will try again later');
       if (atom.config.get('atom-ftp-editor.presistDownload')) {
         download(fromFile, toFile); // keep trying until everything done
       }
     } else {
-        atomVisual.showLog('downloaded ' + fromFile);
-        stream.pipe(fs.createWriteStream(toFile));
-      }
+      atomVisual.showLog('downloaded ' + fromFile);
+      stream.pipe(fs.createWriteStream(toFile));
+    }
   });
+
 }
 
 function handleFile(path, file) {
   var localPath = PROJECT_PATH + path + '/' + file.name;
   var remotePath = path + '/' + file.name;
-  var __isFolderExist = function __isFolderExist(exists) {
+  var __isFolderExist = function(exists) {
     if (exists) {
       AtomFtpEditor.__downloadProject(remotePath);
       return [true];
@@ -116,7 +109,7 @@ function handleFile(path, file) {
   /**
    *
    */
-  var __continueRecursion = function __continueRecursion(folderNotExist) {
+  var __continueRecursion = function(folderNotExist) {
     if (!folderNotExist) {
       AtomFtpEditor.__downloadProject(remotePath);
     }
@@ -124,7 +117,7 @@ function handleFile(path, file) {
   /**
    *
    */
-  var __singleFileHandler = function __singleFileHandler(exists) {
+  var __singleFileHandler = function(exists) {
     if (exists) {
       // TODO: if file exists need to check date modified and download if new on exists
       console.log('');
@@ -134,11 +127,13 @@ function handleFile(path, file) {
   };
 
   ////////////////////////////
-  if (file.type === 'd') {
-    // if directory make sure exists and get all data from
-    fs.existsPromise(localPath).spread(__isFolderExist).spread(__continueRecursion);
+  if (file.type === 'd') { // if directory make sure exists and get all data from
+    fs.existsPromise(localPath)
+      .spread(__isFolderExist)
+      .spread(__continueRecursion);
   } else {
-    fs.existsPromise(localPath).spread(__singleFileHandler);
+    fs.existsPromise(localPath)
+      .spread(__singleFileHandler);
   }
 }
 
@@ -146,18 +141,15 @@ function handleFile(path, file) {
 // Upload functions //
 /////////////////////
 function upload(fromFile, toFile) {
-  if (fromFile.replace(/\\/g, '/') === SETTINGS_PATH.replace(/\\/g, '/')) {
-    //with slashfix
+  if(fromFile.replace(/\\/g, '/') === SETTINGS_PATH.replace(/\\/g, '/')) { //with slashfix
     atomVisual.showLog('you shouldn\'t upload the config file :/');
     return;
   } else {
     atomVisual.showLog('uploading ' + fromFile);
   }
 
-  AtomFtpEditor.ftpClient.put(fromFile, toFile, function (err) {
-    if (err) {
-      throw err;
-    }
+  AtomFtpEditor.ftpClient.put(fromFile, toFile, function(err) {
+    if (err) {throw err;}
 
     atomVisual.showLog('uploaded ' + fromFile);
     AtomFtpEditor.ftpClient.end();
@@ -170,7 +162,8 @@ function upload(fromFile, toFile) {
 /////////////////
 
 function createSettings() {
-  fs.existsPromise(SETTINGS_PATH).spread(function (exists) {
+  fs.existsPromise(SETTINGS_PATH)
+  .spread(function(exists) {
     var defaultSettings = {
       host: 'localhost',
       port: '21',
@@ -194,17 +187,14 @@ function createSettings() {
 }
 
 function connect(action) {
-  var settings = require(SETTINGS_PATH);
+  let settings = require(SETTINGS_PATH);
   atomVisual.showLog('connecting ' + settings.host);
 
   FTP.set(CONNECTION, new Ftp());
   FTP.get(CONNECTION).on('ready', action);
-  FTP.get(CONNECTION).on('error', function (e) {
-    return atomVisual.showLog(e);
-  });
+  FTP.get(CONNECTION).on('error', (e)=>atomVisual.showLog(e));
 
   FTP.get(CONNECTION).connect(settings);
-  FTP.get(CONNECTION).on('close', function (e) {
-    return atomVisual.showLog('connection close');
-  });
+  FTP.get(CONNECTION).on('close', (e)=>atomVisual.showLog('connection close'));
+
 }

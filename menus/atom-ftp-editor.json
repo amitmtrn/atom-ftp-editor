@@ -7,11 +7,11 @@
           "label": "FTP editor",
           "submenu": [
             {
-              "label": "Create and Initialize Settings",
+              "label": "Create settings file",
               "command": "ftp-editor:create"
             },
             {
-              "label": "Download Project",
+              "label": "Download entire project",
               "command": "ftp-editor:download"
             }
 
@@ -23,14 +23,6 @@
   "context-menu": {
     ".tree-view": [],
     "atom-workspace": [
-      {
-        "label": "Download FTP",
-        "command": "ftp-editor:current-download"
-      },
-      {
-        "label": "upload FTP",
-        "command": "ftp-editor:current-upload"
-      }
 
     ]
   }

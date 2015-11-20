@@ -20,7 +20,14 @@
   },
   "dependencies": {
     "ftp": "^0.3.10",
-    "node-promises": "git://github.com/amitmtrn/node-promises",
     "react": "^0.13.3"
+  },
+  "devDependencies": {
+    "babel-plugin-syntax-jsx": "^6.1.18",
+    "babel-preset-es2015": "^6.1.18",
+    "babel-preset-react": "^6.1.18",
+    "gulp": "^3.9.0",
+    "gulp-babel": "^6.1.0",
+    "node-promises": "^0.2.1"
   }
 }
