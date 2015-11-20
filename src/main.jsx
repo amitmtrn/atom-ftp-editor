@@ -1,8 +1,8 @@
 //dependencies
-var React = require('react');
 var nodePromises = require('node-promises');
 var Ftp = require('ftp');
 var fs = nodePromises('fs');
+var atomVisual = require('./modules/atom-visual');
 
 // constant
 var PROJECT_PATH = atom.project.getPaths()[0];
@@ -11,8 +11,6 @@ var SETTINGS_PATH = PROJECT_PATH + '/.ftp-settings.json';
 module.exports = AtomFtpEditor = {
   ftpClient: undefined,
   settings: undefined,
-  panelItem: {},
-
   config: {
     autoDownloadOnOpen: {
       type: 'boolean',
@@ -32,9 +30,7 @@ module.exports = AtomFtpEditor = {
    *
    */
   activate: function() {
-    AtomFtpEditor.panelItem.item = document.createElement("div");
-    atom.workspace.addBottomPanel(AtomFtpEditor.panelItem);
-    AtomFtpEditor.showLog('atom ftp editor activated make sure the settings (' + PROJECT_PATH + ') are correct');
+    atomVisual.showLog('atom ftp editor activated make sure the settings (' + PROJECT_PATH + ') are correct');
 
     // register commands
     atom.commands.add('atom-workspace', {
@@ -54,46 +50,37 @@ module.exports = AtomFtpEditor = {
   },
 
   currentDownload: function() {
-    var cleanPath = AtomFtpEditor.__getCurrentFile()
-                    .split(PROJECT_PATH).join('').replace(/\\/g, '/');
-    if (!AtomFtpEditor.ftpClient) {
-      AtomFtpEditor.__createFTP(AtomFtpEditor.currentDownload);
-    } else {
-      AtomFtpEditor.__download(AtomFtpEditor.settings.path + cleanPath, AtomFtpEditor.__getCurrentFile());
-    }
+      AtomFtpEditor.__createFTP(AtomFtpEditor.currentDownloadHandle);
   },
 
-  currentUpload: function() {
-    if (!AtomFtpEditor.ftpClient) {
-      AtomFtpEditor.__createFTP(AtomFtpEditor.__uploadCurrent);
-    } else {
-      AtomFtpEditor.__uploadCurrent();
-    }
+  currentDownloadHandle: function() {
+    var cleanPath = AtomFtpEditor.__getCurrentFile()
+                    .split(PROJECT_PATH).join('').replace(/\\/g, '/');
+    AtomFtpEditor.__download(AtomFtpEditor.settings.path + cleanPath, AtomFtpEditor.__getCurrentFile());
+  }
 
+  currentUpload: function() {
+    AtomFtpEditor.__createFTP(AtomFtpEditor.__uploadCurrent);
   },
 
   __onopen: function(e) {
     if (!e || !e.getPath) {
       return;
     }
+      AtomFtpEditor.__createFTP(AtomFtpEditor.__onopenHandle);
+  },
+
+  __onopenHandle: function() {
     var cleanPath = e.getPath()
                     .split(PROJECT_PATH).join('').replace(/\\/g, '/');
-    if (!AtomFtpEditor.ftpClient) {
-      AtomFtpEditor.__createFTP(AtomFtpEditor.__onopen);
-    } else {
-      AtomFtpEditor.__download(AtomFtpEditor.settings.path + cleanPath, e.getPath());
-    }
-  },
+    AtomFtpEditor.__download(AtomFtpEditor.settings.path + cleanPath, e.getPath());
+  }
 
   /**
    *
    */
   __onsave: function() {
-    if (!AtomFtpEditor.ftpClient) {
-      AtomFtpEditor.__createFTP(AtomFtpEditor.__uploadCurrent);
-    } else {
-      AtomFtpEditor.__uploadCurrent();
-    }
+    AtomFtpEditor.__createFTP(AtomFtpEditor.__uploadCurrent);
   },
 
   __createFTP: function(func) {
@@ -243,16 +230,16 @@ module.exports = AtomFtpEditor = {
     }
   },
 
-  __download: function(fromFile, toFile) {
+  __download: function(fromFile) {
     AtomFtpEditor.showLog('downloading file ' + fromFile);
     AtomFtpEditor.ftpClient.get(fromFile, function(err, stream) {
       if (err) {
-        AtomFtpEditor.showLog('Error downloading ' + fromFile + 'will try again later');
+        atomVisual.showLog('Error downloading ' + fromFile + 'will try again later');
         if (atom.config.get('atom-ftp-editor.presistDownload')) {
           AtomFtpEditor.__download(fromFile, toFile); // keep trying until everything done
         }
       } else {
-        AtomFtpEditor.showLog('downloaded ' + fromFile);
+        atomVisual.showLog('downloaded ' + fromFile);
         stream.pipe(fs.createWriteStream(toFile));
       }
     });
@@ -261,27 +248,20 @@ module.exports = AtomFtpEditor = {
 
   __upload: function(fromFile, toFile) {
     if(fromFile.replace(/\\/g, '/') === SETTINGS_PATH.replace(/\\/g, '/')) { //with slashfix
-      AtomFtpEditor.showLog('you shouldn\'t upload the config file :/');
+      atomVisual.showLog('you shouldn\'t upload the config file :/');
       return;
     } else {
-      AtomFtpEditor.showLog('uploading ' + fromFile);
+      atomVisual.showLog('uploading ' + fromFile);
     }
 
     AtomFtpEditor.ftpClient.put(fromFile, toFile, function(err) {
       if (err) {throw err;}
 
-      AtomFtpEditor.showLog('uploaded ' + fromFile);
+      atomVisual.showLog('uploaded ' + fromFile);
       AtomFtpEditor.ftpClient.end();
       AtomFtpEditor.ftpClient = undefined;
     });
   },
 
-  showLog: function(text) {
-    console.log(text);
-    React.render(
-      <div>{{text}}</div>,
-        AtomFtpEditor.panelItem.item
-      );
-  }
 
 };
